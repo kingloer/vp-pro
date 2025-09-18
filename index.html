@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>mqatd</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #0a0a0a;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+    .player-wrapper {
+        width: 100%;
+        max-width: 900px;
+        background: #111;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    }
+    .video-section { position: relative; background: #000; }
+    video { width: 100%; display: block; height: auto; max-height: 506px; cursor: pointer; }
+    .video-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        padding: 30px 20px 20px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .video-section:hover .video-overlay { opacity: 1; }
+    .progress-bar {
+        height: 3px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 2px;
+        cursor: pointer;
+        margin-bottom: 15px;
+        position: relative;
+    }
+    .progress-fill {
+        height: 100%;
+        background: #fff;
+        border-radius: 2px;
+        width: 0%;
+        position: relative;
+    }
+    .progress-fill::after {
+        content: '';
+        position: absolute;
+        right: -6px;
+        top: -4px;
+        width: 11px;
+        height: 11px;
+        background: #fff;
+        border-radius: 50%;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    .progress-bar:hover .progress-fill::after { opacity: 1; }
+    .controls-row { display: flex; align-items: center; justify-content: space-between; color: white; }
+    .left-controls { display: flex; align-items: center; gap: 20px; }
+    .control-btn {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+    .control-btn:hover { transform: scale(1.1); }
+    .play-btn { font-size: 24px; }
+    .nav-btn { font-size: 18px; }
+    .time { font-size: 13px; opacity: 0.8; font-weight: 300; letter-spacing: 0.5px; }
+    .playlist-toggle { font-size: 18px; }
+    .current-title {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: white;
+        font-size: 16px;
+        font-weight: 500;
+        opacity: 0;
+        transition: opacity 0.3s;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .video-section:hover .current-title { opacity: 1; }
+    .playlist-section {
+        background: #1a1a1a;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+    .playlist-section.open { max-height: 300px; overflow-y: auto; }
+    .playlist-section::-webkit-scrollbar { width: 6px; }
+    .playlist-section::-webkit-scrollbar-track { background: #111; }
+    .playlist-section::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    .playlist-item {
+        padding: 15px 20px;
+        color: #999;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+    }
+    .playlist-item:hover { background: #222; color: #fff; }
+    .playlist-item.active { background: #252525; color: #fff; border-left-color: #fff; }
+    .playlist-number { opacity: 0.5; min-width: 20px; }
+    .playlist-item.active .playlist-number { opacity: 1; }
+    @media (max-width: 640px) {
+        .control-btn span { display: none; }
+        .time { font-size: 12px; }
+    }
+</style>
+</head>
+<body>
+<div class="player-wrapper">
+    <div class="video-section">
+        <video id="videoPlayer">
+            Your browser does not support the video tag.
+        </video>
+        <div class="current-title" id="currentTitle">Select a video</div>
+        <div class="video-overlay">
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="controls-row">
+                <div class="left-controls">
+                   
+                   
+                  <button class="control-btn nav-btn" id="prevBtn" title="Previous">
+    <!-- Modern Previous Icon -->
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+</button> 
+                   
+                   
+          
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    <button class="control-btn play-btn" id="playBtn" title="Play/Pause">
+                        <!-- Play Icon initially -->
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </button>
+                   
+                   
+                   
+                   
+             
+              <button class="control-btn nav-btn" id="nextBtn" title="Next">
+    <!-- Modern Next Icon -->
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+</button>      
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    <span class="time" id="timeDisplay">0:00 / 0:00</span>
+                </div>
+                <button class="control-btn playlist-toggle" id="playlistBtn" title="Playlist">
+                    <!-- Playlist Icon -->
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="playlist-section" id="playlistSection">
+        <!-- Playlist items will be added here -->
+    </div>
+</div>
+
+<script>
+const videos = [
+    { title: "Mountain Wonders", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" },
+    { title: "Elephant Dream", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" },
+    { title: "Big Buck Bunny", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+    { title: "For Bigger Joyrides", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" },
+    { title: "For Bigger Escape", url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4" }
+];
+
+const videoPlayer = document.getElementById('videoPlayer');
+const playBtn = document.getElementById('playBtn');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const progressBar = document.getElementById('progressBar');
+const progressFill = document.getElementById('progressFill');
+const timeDisplay = document.getElementById('timeDisplay');
+const currentTitle = document.getElementById('currentTitle');
+const playlistBtn = document.getElementById('playlistBtn');
+const playlistSection = document.getElementById('playlistSection');
+
+let currentIndex = 0;
+let playlistOpen = false;
+
+function init() {
+    createPlaylist();
+    loadVideo(0);
+    setupListeners();
+}
+
+function loadVideo(index) {
+    currentIndex = index;
+    videoPlayer.src = videos[index].url;
+    currentTitle.textContent = videos[index].title;
+    updatePlaylistActive();
+    videoPlayer.play();
+    updatePlayButton();
+}
+
+function createPlaylist() {
+    playlistSection.innerHTML = '';
+    videos.forEach((video, index) => {
+        const item = document.createElement('div');
+        item.className = 'playlist-item';
+        item.innerHTML = `<span class="playlist-number">${index + 1}</span><span>${video.title}</span>`;
+        item.onclick = () => { loadVideo(index); togglePlaylist(); };
+        playlistSection.appendChild(item);
+    });
+}
+
+function updatePlaylistActive() {
+    const items = playlistSection.querySelectorAll('.playlist-item');
+    items.forEach((item, i) => { item.classList.toggle('active', i === currentIndex); });
+}
+
+function togglePlay() {
+    if (videoPlayer.paused) { videoPlayer.play(); } else { videoPlayer.pause(); }
+    updatePlayButton();
+}
+
+function updatePlayButton() {
+    playBtn.innerHTML = videoPlayer.paused ? 
+    `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>` :
+    `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`;
+}
+
+function playNext() { loadVideo((currentIndex + 1) % videos.length); }
+function playPrev() { loadVideo((currentIndex - 1 + videos.length) % videos.length); }
+
+function updateProgress() {
+    const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+    progressFill.style.width = percent + '%';
+    const current = formatTime(videoPlayer.currentTime);
+    const total = formatTime(videoPlayer.duration);
+    timeDisplay.textContent = `${current} / ${total}`;
+}
+
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2,'0')}`;
+}
+
+function seek(e) {
+    const rect = progressBar.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    videoPlayer.currentTime = percent * videoPlayer.duration;
+}
+
+function togglePlaylist() {
+    playlistOpen = !playlistOpen;
+    playlistSection.classList.toggle('open', playlistOpen);
+}
+
+function setupListeners() {
+    playBtn.onclick = togglePlay;
+    prevBtn.onclick = playPrev;
+    nextBtn.onclick = playNext;
+    playlistBtn.onclick = togglePlaylist;
+    progressBar.onclick = seek;
+    videoPlayer.onclick = togglePlay;
+    videoPlayer.ontimeupdate = updateProgress;
+    videoPlayer.onended = playNext;
+    videoPlayer.onplay = updatePlayButton;
+    videoPlayer.onpause = updatePlayButton;
+
+    document.onkeydown = (e) => {
+        switch(e.key) {
+            case ' ': e.preventDefault(); togglePlay(); break;
+            case 'ArrowLeft': videoPlayer.currentTime -= 10; break;
+            case 'ArrowRight': videoPlayer.currentTime += 10; break;
+            case 'ArrowUp': e.preventDefault(); playPrev(); break;
+            case 'ArrowDown': e.preventDefault(); playNext(); break;
+        }
+    };
+}
+
+init();
+</script>
+</body>
+</html>
