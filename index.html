@@ -23,7 +23,7 @@
         overflow: hidden;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
     }
-    .video-section { position: relative; background: #000; }
+    .video-section { position: relative; background: #000; min-height: 300px; }
     video { width: 100%; display: block; height: auto; max-height: 506px; cursor: pointer; }
     .video-overlay {
         position: absolute;
@@ -32,7 +32,7 @@
         right: 0;
         background: linear-gradient(transparent, rgba(0,0,0,0.8));
         padding: 30px 20px 20px;
-        opacity: 0;
+        opacity: 1;
         transition: opacity 0.3s ease;
     }
     .video-section:hover .video-overlay { opacity: 1; }
@@ -89,18 +89,18 @@
         color: white;
         font-size: 16px;
         font-weight: 500;
-        opacity: 0;
+        opacity: 1;
         transition: opacity 0.3s;
         text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
     .video-section:hover .current-title { opacity: 1; }
     .playlist-section {
         background: #1a1a1a;
-        max-height: 0;
-        overflow: hidden;
+        max-height: 300px;
+        overflow-y: auto;
         transition: max-height 0.3s ease;
     }
-    .playlist-section.open { max-height: 300px; overflow-y: auto; }
+    .playlist-section.closed { max-height: 0; overflow: hidden; }
     .playlist-section::-webkit-scrollbar { width: 6px; }
     .playlist-section::-webkit-scrollbar-track { background: #111; }
     .playlist-section::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
@@ -226,11 +226,11 @@ const playlistBtn = document.getElementById('playlistBtn');
 const playlistSection = document.getElementById('playlistSection');
 
 let currentIndex = 0;
-let playlistOpen = false;
+let playlistOpen = true; // Start with playlist open
 
 function init() {
     createPlaylist();
-    loadVideo(0);
+    loadVideo(0); // Load the first video on startup
     setupListeners();
 }
 
@@ -249,7 +249,7 @@ function createPlaylist() {
         const item = document.createElement('div');
         item.className = 'playlist-item';
         item.innerHTML = `<span class="playlist-number">${index + 1}</span><span>${video.title}</span>`;
-        item.onclick = () => { loadVideo(index); togglePlaylist(); };
+        item.onclick = () => { loadVideo(index); };
         playlistSection.appendChild(item);
     });
 }
@@ -295,7 +295,7 @@ function seek(e) {
 
 function togglePlaylist() {
     playlistOpen = !playlistOpen;
-    playlistSection.classList.toggle('open', playlistOpen);
+    playlistSection.classList.toggle('closed', !playlistOpen);
 }
 
 function setupListeners() {
