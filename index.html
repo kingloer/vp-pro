@@ -23,7 +23,7 @@
         overflow: hidden;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
     }
-    .video-section { position: relative; background: #000; min-height: 300px; }
+    .video-section { position: relative; background: #000; }
     video { width: 100%; display: block; height: auto; max-height: 506px; cursor: pointer; }
     .video-overlay {
         position: absolute;
@@ -35,7 +35,6 @@
         opacity: 1;
         transition: opacity 0.3s ease;
     }
-    .video-section:hover .video-overlay { opacity: 1; }
     .progress-bar {
         height: 3px;
         background: rgba(255,255,255,0.2);
@@ -93,14 +92,13 @@
         transition: opacity 0.3s;
         text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
-    .video-section:hover .current-title { opacity: 1; }
     .playlist-section {
         background: #1a1a1a;
-        max-height: 300px;
-        overflow-y: auto;
+        max-height: 0;
+        overflow: hidden;
         transition: max-height 0.3s ease;
     }
-    .playlist-section.closed { max-height: 0; overflow: hidden; }
+    .playlist-section.open { max-height: 300px; overflow-y: auto; }
     .playlist-section::-webkit-scrollbar { width: 6px; }
     .playlist-section::-webkit-scrollbar-track { background: #111; }
     .playlist-section::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
@@ -205,11 +203,19 @@ const videos = [
    { title: "Iniyum Kaanan Varam", url: "Iniyum Kaanan Varam.mp4" },
 { title: "Slavic Queen", url: "Slavic Queen.mp4" },
 { title: "Palnilavin Poykayil", url: "Palnilavin Poykayil.mp4" },
-   { title: "Maradona - Nilapakshi", url: "Maradona - Nilapakshi.mp4" },
-{ title: "Kanavonnile chiri maayave", url: "Kanavonnile chiri maayave.mp4" },
-{ title: "Aadyam Thammil", url: "Aadyam Thammil.mp4" },
-{ title: "Kaana Mullal", url: "Kaana Mullal.mp4" },
-{ title: "Onnodunnu - Thirakkatha", url: "Onnodunnu - Thirakkatha.mp4" },
+
+
+
+{ title: "Maradona - Nilapakshi", url: "https://files.catbox.moe/9q78s9.mp4" },
+{ title: "Kanavonnile chiri maayave", url: "https://files.catbox.moe/hje4iy.mp4" },
+{ title: "Aadyam Thammil", url: "https://files.catbox.moe/dsmfgr.mp4" },
+{ title: "Kaana Mullal", url: "https://files.catbox.moe/izlsws.mp4" },
+{ title: "Onnodunnu - Thirakkatha", url: "https://files.catbox.moe/qnltsa.mp4" },
+
+
+
+
+
 
 
 ];
@@ -226,11 +232,11 @@ const playlistBtn = document.getElementById('playlistBtn');
 const playlistSection = document.getElementById('playlistSection');
 
 let currentIndex = 0;
-let playlistOpen = true; // Start with playlist open
+let playlistOpen = false;
 
 function init() {
     createPlaylist();
-    loadVideo(0); // Load the first video on startup
+    loadVideo(0);
     setupListeners();
 }
 
@@ -249,7 +255,7 @@ function createPlaylist() {
         const item = document.createElement('div');
         item.className = 'playlist-item';
         item.innerHTML = `<span class="playlist-number">${index + 1}</span><span>${video.title}</span>`;
-        item.onclick = () => { loadVideo(index); };
+        item.onclick = () => { loadVideo(index); togglePlaylist(); };
         playlistSection.appendChild(item);
     });
 }
@@ -295,7 +301,7 @@ function seek(e) {
 
 function togglePlaylist() {
     playlistOpen = !playlistOpen;
-    playlistSection.classList.toggle('closed', !playlistOpen);
+    playlistSection.classList.toggle('open', playlistOpen);
 }
 
 function setupListeners() {
