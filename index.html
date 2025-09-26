@@ -1,333 +1,321 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>mqatd</title>
-<style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mobile Responsive Video.js Playlist Player</title>
+  <!-- Video.js CSS -->
+  <link href="https://vjs.zencdn.net/8.10.0/video-js.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #242526;
+      --accent: #3a3b3c;
+      --highlight: #4e4f50;
+      --text: #e4e6eb;
+      --active: #1877f2;
+      --overlay-fade: 1s;
+      --overlay-hide-delay: 2200ms;
+    }
     body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: #0a0a0a;
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
+      background: var(--primary);
+      color: var(--text);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .video-title-overlay {
+      position: absolute;
+      top: 12px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-weight: bold;
+      color: var(--text);
+      text-shadow: 0 2px 8px #000;
+      font-size: 1.15rem;
+      pointer-events: none;
+      z-index: 3;
+      padding-bottom: 4px;
+      opacity: 1;
+      transition: opacity var(--overlay-fade) ease;
+    }
+    .video-title-overlay.hide {
+      opacity: 0;
+      transition: opacity var(--overlay-fade) ease;
     }
     .player-wrapper {
-        width: 100%;
-        max-width: 900px;
-        background: #111;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+      position: relative;
+      background: var(--accent);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px #0006;
     }
-    .video-section { position: relative; background: #000; }
-    video { width: 100%; display: block; height: auto; max-height: 506px; cursor: pointer; }
-    .video-overlay {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(transparent, rgba(0,0,0,0.8));
-        padding: 30px 20px 20px;
-        opacity: 1;
-        transition: opacity 0.3s ease;
+    .playlist {
+      background: var(--accent);
+      margin-top: 10px;
+      border-radius: 8px;
+      overflow: hidden;
+      max-height: 220px;
+      box-shadow: 0 1px 4px #0006;
+      scrollbar-width: thin;
+      scrollbar-color: var(--active) var(--highlight);
     }
-    .progress-bar {
-        height: 3px;
-        background: rgba(255,255,255,0.2);
-        border-radius: 2px;
-        cursor: pointer;
-        margin-bottom: 15px;
-        position: relative;
+    .playlist-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 220px;
+      overflow-y: auto;
     }
-    .progress-fill {
-        height: 100%;
-        background: #fff;
-        border-radius: 2px;
-        width: 0%;
-        position: relative;
+    .playlist-list li {
+      padding: 11px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--highlight);
+      transition: background 0.2s;
+      color: var(--text);
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .progress-fill::after {
-        content: '';
-        position: absolute;
-        right: -6px;
-        top: -4px;
-        width: 11px;
-        height: 11px;
-        background: #fff;
-        border-radius: 50%;
-        opacity: 0;
-        transition: opacity 0.2s;
+    .playlist-list li.active {
+      background: var(--active);
+      color: #fff;
     }
-    .progress-bar:hover .progress-fill::after { opacity: 1; }
-    .controls-row { display: flex; align-items: center; justify-content: space-between; color: white; }
-    .left-controls { display: flex; align-items: center; gap: 20px; }
-    .control-btn {
-        background: none;
-        border: none;
-        color: white;
-        cursor: pointer;
+    .playlist-list li:hover {
+      background: var(--highlight);
+    }
+    .playlist-list::-webkit-scrollbar {
+      width: 7px;
+      background: var(--highlight);
+    }
+    .playlist-list::-webkit-scrollbar-thumb {
+      background: var(--active);
+      border-radius: 8px;
+    }
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 12px 0;
+      background: var(--primary);
+      border-radius: 0 0 12px 12px;
+      position: relative;
+      z-index: 2;
+    }
+    .video-btn {
+      background: var(--accent);
+      border: none;
+      color: var(--text);
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 7px 12px;
+      transition: background 0.2s;
+      outline: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 40px;
+      min-height: 40px;
+    }
+    .video-btn:active,
+    .video-btn.active {
+      background: var(--active);
+      color: #fff;
+    }
+    /* Play/Pause SVG switching */
+    #playpause-btn .icon-play { display: block; }
+    #playpause-btn .icon-pause { display: none; }
+    #playpause-btn.playing .icon-play { display: none; }
+    #playpause-btn.playing .icon-pause { display: block; }
+    @media (max-width: 600px) {
+      .container {
+        max-width: 100vw;
         padding: 5px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.2s;
+      }
     }
-    .control-btn:hover { transform: scale(1.1); }
-    .play-btn { font-size: 24px; }
-    .nav-btn { font-size: 18px; }
-    .time { font-size: 13px; opacity: 0.8; font-weight: 300; letter-spacing: 0.5px; }
-    .playlist-toggle { font-size: 18px; }
-    .current-title {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        color: white;
-        font-size: 16px;
-        font-weight: 500;
-        opacity: 1;
-        transition: opacity 0.3s;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-    .playlist-section {
-        background: #1a1a1a;
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease;
-    }
-    .playlist-section.open { max-height: 300px; overflow-y: auto; }
-    .playlist-section::-webkit-scrollbar { width: 6px; }
-    .playlist-section::-webkit-scrollbar-track { background: #111; }
-    .playlist-section::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-    .playlist-item {
-        padding: 15px 20px;
-        color: #999;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        transition: all 0.2s;
-        border-left: 3px solid transparent;
-    }
-    .playlist-item:hover { background: #222; color: #fff; }
-    .playlist-item.active { background: #252525; color: #fff; border-left-color: #fff; }
-    .playlist-number { opacity: 0.5; min-width: 20px; }
-    .playlist-item.active .playlist-number { opacity: 1; }
-    @media (max-width: 640px) {
-        .control-btn span { display: none; }
-        .time { font-size: 12px; }
-    }
-</style>
+  </style>
 </head>
 <body>
-<div class="player-wrapper">
-    <div class="video-section">
-        <video id="videoPlayer">
-            Your browser does not support the video tag.
-        </video>
-        <div class="current-title" id="currentTitle">Select a video</div>
-        <div class="video-overlay">
-            <div class="progress-bar" id="progressBar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <div class="controls-row">
-                <div class="left-controls">
-                   
-                   
-                  <button class="control-btn nav-btn" id="prevBtn" title="Previous">
-    <!-- Modern Previous Icon -->
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 18 9 12 15 6"></polyline>
-    </svg>
-</button> 
-                   
-                   
-          
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    <button class="control-btn play-btn" id="playBtn" title="Play/Pause">
-                        <!-- Play Icon initially -->
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                        </svg>
-                    </button>
-                   
-                   
-                   
-                   
-             
-              <button class="control-btn nav-btn" id="nextBtn" title="Next">
-    <!-- Modern Next Icon -->
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="9 18 15 12 9 6"></polyline>
-    </svg>
-</button>      
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    <span class="time" id="timeDisplay">0:00 / 0:00</span>
-                </div>
-                <button class="control-btn playlist-toggle" id="playlistBtn" title="Playlist">
-                    <!-- Playlist Icon -->
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-        </div>
+  <div class="container">
+    <div class="player-wrapper">
+      <div class="video-title-overlay" id="video-title-overlay"></div>
+      <video
+        id="my-video"
+        class="video-js vjs-theme-forest"
+        controls
+        preload="auto"
+        width="100%"
+        height="240"
+        poster=""
+        data-setup='{}'
+        playsinline
+      >
+        <!-- Sources are set dynamically -->
+      </video>
+      <div class="controls-bar">
+        <button id="prev-btn" title="Previous" class="video-btn">
+          <!-- Prev SVG -->
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="4" y="4" width="2.2" height="16" rx="1.1" fill="currentColor"/>
+          </svg>
+        </button>
+        <button id="playpause-btn" title="Play/Pause" class="video-btn">
+          <!-- Play SVG (shown when paused) -->
+          <svg class="icon-play" width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <polygon points="6,4 20,12 6,20" fill="currentColor"/>
+          </svg>
+          <!-- Pause SVG (shown when playing) -->
+          <svg class="icon-pause" width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
+            <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
+          </svg>
+        </button>
+        <button id="next-btn" title="Next" class="video-btn">
+          <!-- Next SVG -->
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="18" y="4" width="2.2" height="16" rx="1.1" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
     </div>
-    <div class="playlist-section" id="playlistSection">
-        <!-- Playlist items will be added here -->
+    <div class="playlist">
+      <ul class="playlist-list" id="playlist-list"></ul>
     </div>
-</div>
+  </div>
+  <!-- Video.js JS -->
+  <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+  <script>
+    // Video playlist array
+    const playlist = [
+      { title: "Iniyum Kaanan Varam", url: "Iniyum Kaanan Varam.mp4" },
+      { title: "Slavic Queen", url: "Slavic Queen.mp4" },
+      { title: "Palnilavin Poykayil", url: "Palnilavin Poykayil.mp4" },
+      { title: "Maradona - Nilapakshi", url: "https://files.catbox.moe/9q78s9.mp4" },
+      { title: "Kanavonnile chiri maayave", url: "https://files.catbox.moe/hje4iy.mp4" },
+      { title: "Aadyam Thammil", url: "https://files.catbox.moe/dsmfgr.mp4" },
+      { title: "Kaana Mullal", url: "https://files.catbox.moe/izlsws.mp4" },
+      { title: "Onnodunnu - Thirakkatha", url: "https://files.catbox.moe/qnltsa.mp4" },
+    ];
+    let currentIdx = 0;
 
-<script>
-const videos = [
-   { title: "Iniyum Kaanan Varam", url: "Iniyum Kaanan Varam.mp4" },
-{ title: "Slavic Queen", url: "Slavic Queen.mp4" },
-{ title: "Palnilavin Poykayil", url: "Palnilavin Poykayil.mp4" },
-
-
-
-{ title: "Maradona - Nilapakshi", url: "https://files.catbox.moe/9q78s9.mp4" },
-{ title: "Kanavonnile chiri maayave", url: "https://files.catbox.moe/hje4iy.mp4" },
-{ title: "Aadyam Thammil", url: "https://files.catbox.moe/dsmfgr.mp4" },
-{ title: "Kaana Mullal", url: "https://files.catbox.moe/izlsws.mp4" },
-{ title: "Onnodunnu - Thirakkatha", url: "https://files.catbox.moe/qnltsa.mp4" },
-
-
-
-
-
-
-
-];
-
-const videoPlayer = document.getElementById('videoPlayer');
-const playBtn = document.getElementById('playBtn');
-const prevBtn = document.getElementById('prevBtn');
-const nextBtn = document.getElementById('nextBtn');
-const progressBar = document.getElementById('progressBar');
-const progressFill = document.getElementById('progressFill');
-const timeDisplay = document.getElementById('timeDisplay');
-const currentTitle = document.getElementById('currentTitle');
-const playlistBtn = document.getElementById('playlistBtn');
-const playlistSection = document.getElementById('playlistSection');
-
-let currentIndex = 0;
-let playlistOpen = false;
-
-function init() {
-    createPlaylist();
-    loadVideo(0);
-    setupListeners();
-}
-
-function loadVideo(index) {
-    currentIndex = index;
-    videoPlayer.src = videos[index].url;
-    currentTitle.textContent = videos[index].title;
-    updatePlaylistActive();
-    videoPlayer.play();
-    updatePlayButton();
-}
-
-function createPlaylist() {
-    playlistSection.innerHTML = '';
-    videos.forEach((video, index) => {
-        const item = document.createElement('div');
-        item.className = 'playlist-item';
-        item.innerHTML = `<span class="playlist-number">${index + 1}</span><span>${video.title}</span>`;
-        item.onclick = () => { loadVideo(index); togglePlaylist(); };
-        playlistSection.appendChild(item);
+    // Video.js player
+    const player = videojs('my-video', {
+      controls: true,
+      preload: 'auto',
+      fluid: true,
+      aspectRatio: '16:9',
     });
-}
 
-function updatePlaylistActive() {
-    const items = playlistSection.querySelectorAll('.playlist-item');
-    items.forEach((item, i) => { item.classList.toggle('active', i === currentIndex); });
-}
+    // Title overlay logic
+    const titleOverlay = document.getElementById('video-title-overlay');
+    let overlayTimeout = null;
+    function setTitleOverlay(title, autoHide = true) {
+      titleOverlay.textContent = title;
+      titleOverlay.classList.remove('hide');
+      if (overlayTimeout) clearTimeout(overlayTimeout);
+      if (autoHide) {
+        overlayTimeout = setTimeout(() => {
+          titleOverlay.classList.add('hide');
+        }, 2200);
+      }
+    }
+    function showTitleOverlay() {
+      setTitleOverlay(playlist[currentIdx].title, true);
+    }
 
-function togglePlay() {
-    if (videoPlayer.paused) { videoPlayer.play(); } else { videoPlayer.pause(); }
-    updatePlayButton();
-}
+    // Playlist rendering
+    const playlistList = document.getElementById('playlist-list');
+    function renderPlaylist() {
+      playlistList.innerHTML = '';
+      playlist.forEach((video, idx) => {
+        const li = document.createElement('li');
+        li.textContent = video.title;
+        li.classList.toggle('active', idx === currentIdx);
+        li.onclick = () => loadVideo(idx);
+        playlistList.appendChild(li);
+      });
+    }
 
-function updatePlayButton() {
-    playBtn.innerHTML = videoPlayer.paused ? 
-    `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>` :
-    `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`;
-}
+    // Load video by index
+    function loadVideo(idx, autoplay = true) {
+      currentIdx = idx;
+      const video = playlist[idx];
+      player.src({ src: video.url, type: 'video/mp4' });
+      setTitleOverlay(video.title, true);
+      renderPlaylist();
+      updatePlayPauseBtn();
+      if (autoplay) player.play();
+    }
 
-function playNext() { loadVideo((currentIndex + 1) % videos.length); }
-function playPrev() { loadVideo((currentIndex - 1 + videos.length) % videos.length); }
-
-function updateProgress() {
-    const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
-    progressFill.style.width = percent + '%';
-    const current = formatTime(videoPlayer.currentTime);
-    const total = formatTime(videoPlayer.duration);
-    timeDisplay.textContent = `${current} / ${total}`;
-}
-
-function formatTime(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2,'0')}`;
-}
-
-function seek(e) {
-    const rect = progressBar.getBoundingClientRect();
-    const percent = (e.clientX - rect.left) / rect.width;
-    videoPlayer.currentTime = percent * videoPlayer.duration;
-}
-
-function togglePlaylist() {
-    playlistOpen = !playlistOpen;
-    playlistSection.classList.toggle('open', playlistOpen);
-}
-
-function setupListeners() {
-    playBtn.onclick = togglePlay;
-    prevBtn.onclick = playPrev;
-    nextBtn.onclick = playNext;
-    playlistBtn.onclick = togglePlaylist;
-    progressBar.onclick = seek;
-    videoPlayer.onclick = togglePlay;
-    videoPlayer.ontimeupdate = updateProgress;
-    videoPlayer.onended = playNext;
-    videoPlayer.onplay = updatePlayButton;
-    videoPlayer.onpause = updatePlayButton;
-
-    document.onkeydown = (e) => {
-        switch(e.key) {
-            case ' ': e.preventDefault(); togglePlay(); break;
-            case 'ArrowLeft': videoPlayer.currentTime -= 10; break;
-            case 'ArrowRight': videoPlayer.currentTime += 10; break;
-            case 'ArrowUp': e.preventDefault(); playPrev(); break;
-            case 'ArrowDown': e.preventDefault(); playNext(); break;
-        }
+    // Controls bar
+    document.getElementById('prev-btn').onclick = () => {
+      let prevIdx = currentIdx - 1;
+      if (prevIdx < 0) prevIdx = playlist.length - 1;
+      loadVideo(prevIdx);
     };
-}
+    document.getElementById('next-btn').onclick = () => {
+      let nextIdx = currentIdx + 1;
+      if (nextIdx >= playlist.length) nextIdx = 0;
+      loadVideo(nextIdx);
+    };
 
-init();
-</script>
+    // Play/Pause toggle with SVG icon switching
+    const playpauseBtn = document.getElementById('playpause-btn');
+    function updatePlayPauseBtn() {
+      if (player.paused()) {
+        playpauseBtn.classList.remove('playing');
+      } else {
+        playpauseBtn.classList.add('playing');
+      }
+    }
+    playpauseBtn.onclick = () => {
+      if (player.paused()) player.play();
+      else player.pause();
+      updatePlayPauseBtn();
+      showTitleOverlay();
+    };
+
+    // Video events
+    player.on('play', () => {
+      updatePlayPauseBtn();
+      showTitleOverlay();
+      scrollActiveIntoView();
+    });
+    player.on('pause', updatePlayPauseBtn);
+    player.on('loadeddata', () => {
+      updatePlayPauseBtn();
+      scrollActiveIntoView();
+    });
+
+    // Handle video ended: play next
+    player.on('ended', function() {
+      let nextIdx = currentIdx + 1;
+      if (nextIdx >= playlist.length) nextIdx = 0;
+      loadVideo(nextIdx);
+    });
+
+    // Initial load
+    window.onload = () => {
+      renderPlaylist();
+      loadVideo(currentIdx, false);
+      updatePlayPauseBtn();
+      setTitleOverlay(playlist[currentIdx].title, true);
+    };
+
+    // Playlist click scroll into view for active
+    function scrollActiveIntoView() {
+      const active = playlistList.querySelector('.active');
+      if (active) active.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  </script>
 </body>
 </html>
